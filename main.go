@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"log/slog"
 
 	"github.com/chrollo-lucider-12/dfs/p2p"
 )
@@ -12,12 +13,13 @@ func OnPeer(p2p.Peer) error {
 }
 
 func main() {
+	logger := p2p.NewSlogLogger(slog.LevelInfo)
 	trOpts := p2p.TCPTransportOpts{
 		ListenAddr:    ":3000",
 		HandshakeFunc: p2p.NOPHandshakeFunc,
 		Decoder:       p2p.NOPDecoder{},
 		OnPeer:        OnPeer,
-		Logger:        p2p.NewSlogLogger(1),
+		Logger:        logger,
 	}
 
 	tr := p2p.NewTCPTransport(trOpts)
