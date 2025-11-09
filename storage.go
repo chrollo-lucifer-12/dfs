@@ -11,6 +11,8 @@ import (
 	"strings"
 )
 
+const defaultroot = "chrollo"
+
 func CASPathTransformFunc(key string) PathKey {
 	hash := sha1.Sum([]byte(key))
 	hashStr := hex.EncodeToString(hash[:])
@@ -48,6 +50,7 @@ func (p PathKey) FullPath() string {
 }
 
 type StoreOpts struct {
+	Root              string
 	PathTransformFunc PathTransformFunc
 }
 
@@ -56,6 +59,9 @@ type Store struct {
 }
 
 func NewStore(opts StoreOpts) *Store {
+	if opts.Root == "" {
+		opts.Root = defaultroot
+	}
 	return &Store{
 		StoreOpts: opts,
 	}
@@ -85,16 +91,16 @@ func (s *Store) Read(key string) (io.Reader, error) {
 
 func (s *Store) readStream(key string) (io.ReadCloser, error) {
 	pathkey := s.PathTransformFunc(key)
-	return os.Open(pathkey.FullPath())
+	return os.Open(s.Root + "/" + pathkey.FullPath())
 }
 
 func (s *Store) writeStream(key string, r io.Reader) error {
 	pathkey := s.PathTransformFunc(key)
-	if err := os.MkdirAll(pathkey.Pathname, os.ModePerm); err != nil {
+	if err := os.MkdirAll(s.Root+"/"+pathkey.Pathname, os.ModePerm); err != nil {
 		return err
 	}
 
-	fullPath := pathkey.FullPath()
+	fullPath := s.Root + "/" + pathkey.FullPath()
 
 	f, err := os.Create(fullPath)
 	if err != nil {
