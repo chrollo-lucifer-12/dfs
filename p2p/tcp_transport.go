@@ -2,7 +2,6 @@ package p2p
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"net"
 )
@@ -29,6 +28,7 @@ type TCPTransportOpts struct {
 	ListenAddr    string
 	HandshakeFunc HandshakeFunc
 	Decoder       Decoder
+	Logger        Logger
 	OnPeer        func(Peer) error
 }
 
@@ -63,7 +63,7 @@ func (t *TCPTransport) startAcceptLoop() {
 	for {
 		conn, err := t.listener.Accept()
 		if err != nil {
-			fmt.Printf("TCP accept error : %s\n", err)
+			t.Logger.Error("error accepting connection", "err")
 		}
 
 		go t.handleConn(conn)
@@ -75,14 +75,16 @@ type Temp struct{}
 func (t *TCPTransport) handleConn(conn net.Conn) {
 	var err error
 	defer func() {
-		fmt.Println("dropping peer connection")
-		err = conn.Close()
+		if err != nil && !errors.Is(err, io.EOF) {
+			t.Logger.Error("closing peer %s due to error", "err", err, "address", conn.RemoteAddr())
+		}
+		conn.Close()
 	}()
 
 	peer := NewTCPPeer(conn, false)
 
 	if err = t.HandshakeFunc(peer); err != nil {
-		fmt.Printf("TCP handshake error : %s\n", err)
+		t.Logger.Error("TCP handshake error ", "err", err)
 		conn.Close()
 		return
 	}
@@ -96,16 +98,15 @@ func (t *TCPTransport) handleConn(conn net.Conn) {
 	msg := Message{}
 	for {
 		err = t.Decoder.Decode(conn, &msg)
-		fmt.Println(err)
-		if ok := errors.Is(err, io.EOF); ok {
-			return
-		}
 		if err != nil {
-			fmt.Printf("TCP read Error : %s\n", err)
+			if ok := errors.Is(err, io.EOF); ok {
+				return
+			}
+			t.Logger.Error("TCP read Error ", "err", err)
 			continue
 		}
 		msg.From = conn.RemoteAddr()
 		t.rpcch <- msg
-		fmt.Printf("message: %+v\n", msg)
+
 	}
 }

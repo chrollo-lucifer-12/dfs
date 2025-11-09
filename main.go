@@ -17,6 +17,7 @@ func main() {
 		HandshakeFunc: p2p.NOPHandshakeFunc,
 		Decoder:       p2p.NOPDecoder{},
 		OnPeer:        OnPeer,
+		Logger:        p2p.NewSlogLogger(1),
 	}
 
 	tr := p2p.NewTCPTransport(trOpts)
