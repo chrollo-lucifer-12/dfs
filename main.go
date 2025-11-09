@@ -7,11 +7,16 @@ import (
 	"github.com/chrollo-lucider-12/dfs/p2p"
 )
 
+func OnPeer(p2p.Peer) error {
+	return nil
+}
+
 func main() {
 	trOpts := p2p.TCPTransportOpts{
 		ListenAddr:    ":3000",
 		HandshakeFunc: p2p.NOPHandshakeFunc,
 		Decoder:       p2p.NOPDecoder{},
+		OnPeer:        OnPeer,
 	}
 
 	tr := p2p.NewTCPTransport(trOpts)
