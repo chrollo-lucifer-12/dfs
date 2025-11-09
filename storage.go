@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"strings"
 )
@@ -58,6 +59,15 @@ func NewStore(opts StoreOpts) *Store {
 	return &Store{
 		StoreOpts: opts,
 	}
+}
+
+func (s *Store) Has(key string) bool {
+	pathkey := s.PathTransformFunc(key)
+	_, err := os.Stat(pathkey.FullPath())
+	if err == fs.ErrNotExist {
+		return false
+	}
+	return true
 }
 
 func (s *Store) Read(key string) (io.Reader, error) {

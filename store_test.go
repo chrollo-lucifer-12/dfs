@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"io"
+	"os"
 	"testing"
 )
 
@@ -25,10 +26,12 @@ func TestStore(t *testing.T) {
 	s := NewStore(StoreOpts{
 		PathTransformFunc: CASPathTransformFunc,
 	})
-	data := []byte("hi")
-	s.writeStream("sahil", bytes.NewReader(data))
 
-	r, _ := s.Read("sahil")
+	data, _ := os.ReadFile("chrollo.jpeg")
+
+	s.writeStream("chrollo", bytes.NewReader(data))
+
+	r, _ := s.Read("chrollo")
 
 	b, _ := io.ReadAll(r)
 
