@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"log/slog"
 
@@ -14,24 +13,22 @@ func OnPeer(p2p.Peer) error {
 
 func main() {
 	logger := p2p.NewSlogLogger(slog.LevelInfo)
-	trOpts := p2p.TCPTransportOpts{
+	tcpTransport := p2p.NewTCPTransport(p2p.TCPTransportOpts{
 		ListenAddr:    ":3000",
 		HandshakeFunc: p2p.NOPHandshakeFunc,
-		Decoder:       p2p.NOPDecoder{},
-		OnPeer:        OnPeer,
 		Logger:        logger,
+		Decoder:       p2p.NOPDecoder{},
+	})
+	fileServerOpts := FileServerOpts{
+		StorageRoot:       "chrollo",
+		PathTransformFunc: CASPathTransformFunc,
+		Transport:         tcpTransport,
 	}
 
-	tr := p2p.NewTCPTransport(trOpts)
-
-	go func() {
-		for msg := range tr.Consume() {
-			fmt.Println(msg)
-		}
-	}()
-
-	if err := tr.ListenAndAccept(); err != nil {
+	s := NewFileServer(fileServerOpts)
+	if err := s.Start(); err != nil {
 		log.Fatal(err)
 	}
+
 	select {}
 }
