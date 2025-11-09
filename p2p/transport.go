@@ -7,4 +7,5 @@ type Peer interface {
 type Transport interface {
 	ListenAndAccept() error
 	Consume() <-chan Message
+	Close() error
 }

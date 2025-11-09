@@ -49,6 +49,10 @@ func (t *TCPTransport) Consume() <-chan Message {
 	return t.rpcch
 }
 
+func (t *TCPTransport) Close() error {
+	return t.listener.Close()
+}
+
 func (t *TCPTransport) ListenAndAccept() error {
 	var err error
 	t.listener, err = net.Listen("tcp", t.ListenAddr)
@@ -62,6 +66,9 @@ func (t *TCPTransport) ListenAndAccept() error {
 func (t *TCPTransport) startAcceptLoop() {
 	for {
 		conn, err := t.listener.Accept()
+		if errors.Is(err, net.ErrClosed) {
+			return
+		}
 		if err != nil {
 			t.Logger.Error("error accepting connection", "err")
 		}
@@ -69,8 +76,6 @@ func (t *TCPTransport) startAcceptLoop() {
 		go t.handleConn(conn)
 	}
 }
-
-type Temp struct{}
 
 func (t *TCPTransport) handleConn(conn net.Conn) {
 	var err error
