@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"sync"
 
 	"github.com/chrollo-lucider-12/dfs/p2p"
 )
@@ -17,8 +18,10 @@ type FileServerOpts struct {
 
 type FileServer struct {
 	FileServerOpts
-	store  *Store
-	quitch chan struct{}
+	store    *Store
+	peerLock sync.Mutex
+	peers    map[string]*p2p.TCPPeer
+	quitch   chan struct{}
 }
 
 func NewFileServer(opts FileServerOpts) *FileServer {
@@ -26,11 +29,21 @@ func NewFileServer(opts FileServerOpts) *FileServer {
 		store:          NewStore(StoreOpts{Root: opts.StorageRoot, PathTransformFunc: opts.PathTransformFunc}),
 		FileServerOpts: opts,
 		quitch:         make(chan struct{}),
+		peers:          make(map[string]*p2p.TCPPeer),
 	}
 }
 
 func (s *FileServer) Stop() {
 	close(s.quitch)
+}
+
+func (s *FileServer) OnPeer(p *p2p.TCPPeer) error {
+	s.peerLock.Lock()
+	defer s.peerLock.Unlock()
+
+	s.peers[p.RemoteAddr().String()] = p
+	log.Printf("connected with peer %s", p.RemoteAddr().String())
+	return nil
 }
 
 func (s *FileServer) loop() {

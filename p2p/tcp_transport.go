@@ -17,6 +17,11 @@ func NewTCPPeer(conn net.Conn, outbound bool) *TCPPeer {
 		outbound: outbound,
 	}
 }
+
+func (p *TCPPeer) RemoteAddr() net.Addr {
+	return p.conn.RemoteAddr()
+}
+
 func (p *TCPPeer) Close() error {
 	if err := p.conn.Close(); err != nil {
 		return err
@@ -29,7 +34,7 @@ type TCPTransportOpts struct {
 	HandshakeFunc HandshakeFunc
 	Decoder       Decoder
 	Logger        Logger
-	OnPeer        func(Peer) error
+	OnPeer        func(*TCPPeer) error
 }
 
 type TCPTransport struct {
