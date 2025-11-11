@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"log"
 	"log/slog"
+	"time"
 
 	"github.com/chrollo-lucider-12/dfs/p2p"
 )
@@ -16,7 +18,7 @@ func makeServer(listenAddr string, nodes ...string) *FileServer {
 		Decoder:       p2p.NOPDecoder{},
 	})
 	fileServerOpts := FileServerOpts{
-		StorageRoot:       listenAddr + "_network",
+		StorageRoot:       listenAddr[1:] + "_network",
 		PathTransformFunc: CASPathTransformFunc,
 		Transport:         tcpTransport,
 		BootstrapNodes:    nodes,
@@ -35,5 +37,12 @@ func main() {
 		log.Fatal(s1.Start())
 	}()
 
-	s2.Start()
+	time.Sleep(1 * time.Second)
+	go s2.Start()
+	time.Sleep(1 * time.Second)
+
+	data := bytes.NewReader([]byte("sahil"))
+	s2.StoreData("sahil", data)
+
+	select {}
 }
